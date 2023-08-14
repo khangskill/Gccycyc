@@ -1,0 +1,810 @@
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("Roger's Scripts", "BloodTheme")
+
+--Main
+local Main = Window:NewTab("Mainhacks")
+local MainSection = Main:NewSection("Main hacks")
+
+
+MainSection:NewButton("Hoopz aimbot and reach", "Op hoopz aimbot and reach", function()
+	local reset = false
+ 
+	pcall(function()
+		if _G.stepped then
+			reset = true
+			_G.stepped:Disconnect()
+			_G.input:Disconnect()
+			_G.charAdded:Disconnect()
+			_G.charAdded = nil
+			_G.stepped = nil
+			_G.input = nil
+			print("RESET")
+		end
+	 
+		if not reset then
+			print("LOADED")
+		end
+	end)
+	 
+	local plr = game.Players.LocalPlayer
+	local uis = game:GetService("UserInputService")
+	local rs = game:GetService("RunService")
+	 
+	local lib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
+	local window = lib:MakeWindow({Name = "Magnet's Hoopz UI"})
+	local main = window:MakeTab({Name = "Main"})
+	 
+	main:AddToggle({Name = "Aimbot", Default = false, Callback = function(v)
+		_G.Aimbot = v
+	end})
+	main:AddToggle({Name = "Reach", Default = false, Callback = function(v)
+		_G.Reach = v
+	end})
+	main:AddToggle({Name = "AutoGaurd/Defend", default = false, Callback = function(v)
+		if v then
+			game.StarterGui:SetCore("SendNotification", {Title = "AutoGaurd/Defend", Text = "Press U to go to the nearest ball", Duration = 5, Button1 = "Okay"})
+		end
+		_G.Autogaurd = v
+	end})
+	main:AddSlider({Name = "WalkSpeed", Min = 16, Max = 19, Default = 16, Color = Color3.fromRGB(80, 80, 255), Increment = 0.1, Callback = function(v)
+		_G.WS = v
+	end})
+	 
+	local shootingEvent = game:GetService("ReplicatedStorage").shootingEvent
+	 
+	if workspace:FindFirstChild("PracticeArea") then
+		workspace.PracticeArea.Parent = workspace.Courts
+	end
+	 
+	local jumping = false
+	 
+	for i,v in pairs(getconnections(game:GetService("UserInputService").TouchTapInWorld)) do
+		for z,x in pairs(getupvalues(v.Function)) do
+			if type(x) == "table" and rawget(x, 1) then
+				_G.method = x
+			elseif z == 10 then
+				_G.key = x
+			end
+		end
+	end
+	 
+	for i,v in pairs(getconnections(plr.Character.HumanoidRootPart:GetPropertyChangedSignal("Size"))) do
+		v:Disable()
+	end
+	 
+	for i,v in pairs(getconnections(plr.Character.HumanoidRootPart:GetPropertyChangedSignal("Color"))) do
+		v:Disable()
+	end
+	 
+	for i,v in pairs(getconnections(plr.Character.HumanoidRootPart:GetPropertyChangedSignal("BrickColor"))) do
+		v:Disable()
+	end
+	 
+	for i,v in pairs(getconnections(plr.Character.Humanoid:GetPropertyChangedSignal("WalkSpeed"))) do
+		v:Disable()
+	end
+	 
+	local ground
+	 
+	local part = workspace:FindPartOnRay(Ray.new(plr.Character.Torso.Position, Vector3.new(0, -100, 5)))
+	if part then
+		ground = part
+	end
+	 
+	local tracking = false
+	local player
+	 
+	function updateNearestPlayerWithBall()
+		local dist = 9e9
+		for i,v in pairs(game.Players:GetPlayers()) do
+			if v.Name ~= plr.Name and v.Character and v.Character:FindFirstChild("Basketball") and not plr.Character:FindFirstChild("Basketball") and (plr.Character.Torso.Position - v.Character.Torso.Position).Magnitude < 50 then
+				local mag = (plr.Character.Torso.Position - v.Character.Torso.Position).Magnitude
+				if dist > mag then
+					dist = mag
+					player = v
+				end
+			end
+		end
+	end
+	 
+	if _G.hook ~= nil then
+		_G.hook = ""; _G.hook = hookmetamethod(game, "__index", newcclosure(function(self, idx)
+			if tostring(self) == "HumanoidRootPart" and idx == "Size" then
+				return Vector3.new(2, 2, 1)
+			elseif tostring(self) == "HumanoidRootPart" and idx == "BrickColor" then
+				return BrickColor.new("Medium stone grey")
+			elseif tostring(self) == "HumanoidRootPart" and idx == "Color" then
+				return Color3.fromRGB(163, 162, 165)
+			elseif tostring(self) == "Humanoid" and idx == "WalkSpeed" then
+				return 16
+			end
+			return hook(self, idx)
+		end))
+	end
+	 
+	shootingEvent.OnClientEvent:Connect(function(newKey)
+		_G.key = newKey
+	end)
+	 
+	function setup()
+		local dist, goal = 9e9, nil
+		for i,v in pairs(workspace.Courts:GetDescendants()) do
+			if v.Name == "Swish" and v:IsA("Sound") and plr.Character and plr.Character:FindFirstChild("Torso") then
+				local mag = (plr.Character.Torso.Position - v.Parent.Position).Magnitude
+				if dist > mag then
+					dist = mag; goal = v.Parent
+				end
+			end
+		end
+		return dist, goal
+	end
+	 
+	function power()
+		return plr.Power
+	end
+	 
+	function changePower(goal)
+		power().Value = goal
+	end
+	 
+	function table(a, b)
+		local args = {
+	X1 = a.X,
+	Y1 = a.Y,
+	Z1 = a.Z,
+	X2 = b.X,
+	Y2 = b.Y,
+	Z2 = b.Z
+	};
+	 
+	return {args[_G.method[1]], args[_G.method[2]], args[_G.method[3]], args[_G.method[4]], args[_G.method[5]], args[_G.method[6]]}
+	end
+	 
+	function arc()
+		local dist, goal = setup()
+	 
+		dist = math.floor(dist)
+		print(dist)
+		if dist == 12 or dist == 13 then
+			return 15
+		elseif dist == 14 or dist == 15 then
+			return 20
+		elseif dist == 16 or dist == 17 then
+			return 15
+		elseif dist == 18 then
+			return 25
+		elseif dist == 19 then
+			return 20
+		elseif dist == 20 or dist == 21 then
+			return 20
+		elseif dist == 22 or dist == 23 then
+			return 25
+		elseif dist == 24 or dist == 25 then
+			return 20
+		elseif dist == 26 then
+			return 15
+		elseif dist == 27 or dist == 28 then
+			return 25
+		elseif dist == 29 or dist == 30 then
+			return 20
+		elseif dist == 31 then
+			return 15
+		elseif dist == 32 or dist == 33 then
+			return 30
+		elseif dist == 34 or dist == 35 or dist == 36 then
+			return 25
+		elseif dist == 37 or dist == 38 then
+			return 35
+		elseif dist == 39 or dist == 40 then
+			return 30
+		elseif dist == 41 then
+			return 25
+		elseif dist == 42 or dist == 43 then
+			return 40
+		elseif dist == 44 then
+			return 35
+		elseif dist == 45 or dist == 46 then
+			return 30
+		elseif dist == 47 or dist == 48 then
+			return 45
+		elseif dist == 49 then
+			return 40
+		elseif dist == 50 then
+			return 35
+		elseif dist == 51 then
+			return 50
+		elseif dist == 52 then
+			return 55
+		elseif dist == 53 or dist == 54 then
+			return 50
+		elseif dist == 55 then
+			return 45
+		elseif dist == 56 then
+			return 40
+		elseif dist == 57 or dist == 58 then
+			return 55
+		elseif dist == 59 or dist == 60 or dist == 61 then
+			return 50
+		elseif dist == 62 or dist == 63 then
+			return 65
+		elseif dist == 64 then
+			return 55
+		elseif dist == 65 then
+			return 60
+		elseif dist == 66 or dist == 67 then
+			return 50
+		elseif dist == 68 or dist == 69 then
+			return 75
+		elseif dist == 70 or dist == 71 then
+			return 70
+		elseif dist == 72 then
+			return 65
+		elseif dist == 73 then
+			return 60
+		elseif dist == 74 then
+			return 50
+		elseif jumping then
+			if dist == 9 or dist == 10 then
+				return 20
+			elseif dist == 11 or dist == 12 then
+				return 15
+			end
+		end
+	end
+	 
+	function getNearestPart(torso)
+		local dist, part = 9e9
+		for i,v in pairs(plr.Character:GetChildren()) do
+			if v:IsA("Part") and torso then
+				local mag = (v.Position - torso.Position).Magnitude
+				if dist > mag then
+					dist = mag
+					part = v
+				end
+			end
+		end
+		return part
+	end
+	 
+	function stepped() pcall(function()
+		if plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and _G.Aimbot then
+			local pwr = power()
+			local dist, goal = setup()
+			local root = plr.Character.HumanoidRootPart
+	 
+			dist = math.floor(dist)
+	 
+			if root and hasBall then
+				root.Size = Vector3.new(2.1, 2.1, 1.1)
+				root.BrickColor = BrickColor.new("Lime green")
+				root.Material = Enum.Material.Neon
+	 
+				if dist >= 13 and dist <= 16 then
+					changePower(30)
+					root.Transparency = 0
+				elseif dist >= 17 and dist <= 21 then
+					changePower(35)
+					root.Transparency = 0
+				elseif dist >= 22 and dist <= 26 then
+					changePower(40)
+					root.Transparency = 0
+				elseif dist >= 27 and dist <= 31 then
+					changePower(45)
+					root.Transparency = 0
+				elseif dist >= 32 and dist <= 36 then
+					changePower(50)
+					root.Transparency = 0
+				elseif dist >= 37 and dist <= 41 then
+					changePower(55)
+					root.Transparency = 0
+				elseif dist >= 42 and dist <= 46 then
+					changePower(60)
+					root.Transparency = 0
+				elseif dist >= 47 and dist <= 50 then
+					changePower(65)
+					root.Transparency = 0
+				elseif dist >= 51 and dist <= 56 then
+					changePower(70)
+					root.Transparency = 0
+				elseif dist >= 57 and dist <= 61 then
+					changePower(75)
+					root.Transparency = 0
+				elseif dist >= 62 and dist <= 67 then
+					changePower(80)
+					root.Transparency = 0
+				elseif dist >= 68 and dist <= 74 then
+					changePower(85)
+					root.Transparency = 0
+				elseif jumping and dist == 9 or dist == 10 or dist == 11 or dist == 12 then
+					changePower(25)
+					root.Transparency = 0
+				else
+					root.Transparency = 1
+				end
+			elseif root and not hasBall and _G.Aimbot then
+				root.Transparency = 1
+			elseif root and not _G.Aimbot then
+				root.Transparency = 1
+			end
+		end
+	 
+		updateNearestPlayerWithBall()
+	 
+		if _G.WS ~= 16 and plr.Character:WaitForChild("Humanoid").WalkSpeed ~= 0 then
+			plr.Character:WaitForChild("Humanoid").WalkSpeed = _G.WS
+		end
+	 
+		if _G.Autogaurd and tracking and player and plr.Character and plr.Character:FindFirstChild("Humanoid") and not plr.Character:FindFirstChild("Basketball") and player.Character and player.Character:FindFirstChild("Basketball") then
+			plr.Character.Humanoid:MoveTo(player.Character.Basketball:FindFirstChildOfClass("Part").Position + player.Character.Torso.CFrame.LookVector + ((player.Character.Humanoid.MoveDirection * 2) + (plr.Character.Torso.Velocity.Unit * 3)))
+	 
+			if (player.Character.Torso.Position.Y - ground.Position.Y) > 2.5 then
+				plr.Character.Humanoid.Jump = true
+			end
+		elseif tracking and player ~= nil and player.Character and plr.Character and plr.Character:FindFirstChild("Basketball") or not player.Character:FindFirstChild("Basketball") then
+			tracking = false
+			return
+		end
+	 
+		for i,v in pairs(game.Players:GetPlayers()) do
+			if (v.Name ~= plr.Name and v.Character and plr.Character) and _G.Reach then
+				local nearestPart = getNearestPart(v.Character.Torso)
+				for z,x in pairs(v.Character:GetChildren()) do
+					if ((nearestPart.Position - v.Character.Torso.Position).Magnitude < 8) then
+						if (x:IsA("Tool") or x:IsA("Folder")) then
+							firetouchinterest(nearestPart, x:FindFirstChildOfClass("Part"), 0)
+							task.wait()
+							firetouchinterest(nearestPart, x:FindFirstChildOfClass("Part"), 1)
+						elseif (x:IsA("BasePart") and string.find(x.Name:lower(), "ball")) then
+							firetouchinterest(nearestPart, x, 0)
+							task.wait()
+							firetouchinterest(nearestPart, x, 1)
+						end
+					end
+				end
+			end
+		end
+	end) end
+	 
+	function shoot()
+		local dist, goal = setup()
+		local pwr = power()
+		local arc = arc()
+	 
+		if arc ~= nil and plr.Character and plr.Character:FindFirstChild("Humanoid") then
+			local args = table(plr.Character.Torso.Position, (goal.Position + Vector3.new(0, arc, 0) - plr.Character.HumanoidRootPart.Position + plr.Character.Humanoid.MoveDirection).Unit)
+	 
+			shootingEvent:FireServer(
+				plr.Character.Basketball,
+				pwr.Value,
+				args,
+				_G.key
+			)
+		end
+	end
+	 
+	function jumped()
+		if _G.Aimbot and plr.Character and hasBall and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.HumanoidRootPart.Transparency == 0 then
+			jumping = true
+			task.wait(0.325)
+			shoot()
+			task.wait(0.1)
+			jumping = false
+		end
+	end
+	 
+	function added(v)
+		if v.Name == "Basketball" then
+			task.wait(0.5)
+			hasBall = true
+		end
+	end
+	 
+	function removed(v)
+		if v.Name == "Basketball" then
+			hasBall = false
+		end
+	end
+	 
+	function began(key, gpe)
+		if not gpe and key.KeyCode == Enum.KeyCode.U and _G.Autogaurd then
+			updateNearestPlayerWithBall()
+			if not tracking then
+				tracking = true
+			else
+				tracking = false
+			end
+		end
+	end
+	 
+	_G.input = plr.Character.Humanoid.Jumping:Connect(jumped)
+	_G.added = plr.Character.ChildAdded:Connect(added)
+	_G.removed = plr.Character.ChildRemoved:Connect(removed)
+	_G.stepped = rs.Stepped:Connect(stepped)
+	_G.began = uis.InputBegan:Connect(began)
+	 
+	_G.charAdded = plr.CharacterAdded:Connect(function(ch)
+		_G.input = ch:WaitForChild("Humanoid").Jumping:Connect(jumped)
+		_G.added = ch.ChildAdded:Connect(added)
+		_G.removed = ch.ChildRemoved:Connect(removed)
+	 
+		for i,v in pairs(getconnections(ch:WaitForChild("HumanoidRootPart"):GetPropertyChangedSignal("Size"))) do
+			v:Disable()
+		end
+		for i,v in pairs(getconnections(ch:WaitForChild("HumanoidRootPart"):GetPropertyChangedSignal("BrickColor"))) do
+			v:Disable()
+		end
+		for i,v in pairs(getconnections(ch:WaitForChild("HumanoidRootPart"):GetPropertyChangedSignal("Color"))) do
+			v:Disable()
+		end
+		for i,v in pairs(getconnections(ch:WaitForChild("Humanoid"):GetPropertyChangedSignal("WalkSpeed"))) do
+			v:Disable()
+		end
+	end)
+end)
+
+MainSection:NewButton("infinite yield", "Op fly script", function()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+end)
+
+
+
+
+MainSection:NewButton("OP PLS DONATE SCRIPT", "Op Pls donate script", function()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/tzechco/roblox-scripts/main/PLS%20DONATE/autofarm.lua'))()
+end)
+
+
+MainSection:NewButton("OP DOORS SCRIPT", "THE BEST DOORS SCRIPT EVER", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Vynixius/main/Doors/Script.lua"))()
+end)
+
+
+MainSection:NewButton("DA HOOD SCRIPT OP", "THE BEST DA HOOD SCRIPT EVER!", function()
+	loadstring(game:HttpGet('https://pastebin.com/raw/XXAWmifh'))()
+end)
+
+
+
+
+
+MainSection:NewButton("OP EVADE SCRIPTS", "THE BEST EVADE SCRIPT EVER!", function()
+	loadstring(game:HttpGet(("https://raw.githubusercontent.com/Robobo2022/script/main/Main.lua"), true))()
+end)
+
+
+
+MainSection:NewButton("OP COMBAT WARRIORS SCRIPTS", "THE BEST COMBAT WARRIORS SCRIPT EVER!", function()
+	loadstring(game:HttpGet("https://projecthook.xyz/scripts/free.lua"))()
+end)
+
+
+
+MainSection:NewButton("PRISON LIFE SCRIPT", "THE BEST PRISON LIFE SCRIPT EVER!", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Vynixius/main/Prison%20Life/Script.lua"))()
+end)
+
+
+
+
+MainSection:NewButton("OP JAILBREAK SCRIPT!", "OP JAILBREAK SCRIPT!", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/KuriWasTaken/MonkeyScripts/main/JailMonkey.lua"))()
+end)
+
+
+
+MainSection:NewButton("DA HOOD SELLING GUI!", "DA HOOD SELLING GUI!", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/Crostide/cdhc/main/gui"))()
+end)
+
+
+
+
+MainSection:NewButton("OP AUTO RAP BATTLES SCRIPT", "THE BEST OP RAP BATTLES SCRIPT EVER!", function()
+	--- shoutout to Polar2003isthebest
+ 
+	local ScreenGui = Instance.new("ScreenGui")
+	local ExploitGUI = Instance.new("Frame")
+	local ExploitName = Instance.new("TextLabel")
+	local ExploitName2 = Instance.new("TextLabel")
+	local DJBoothTeleport = Instance.new("TextButton")
+	local SceneTeleport = Instance.new("TextButton")
+	local ToiletTeleport = Instance.new("TextButton")
+	local FloorTeleport = Instance.new("TextButton")
+	local Credits = Instance.new("TextLabel")
+	local Close = Instance.new("TextButton")
+	local Player2Button = Instance.new("TextButton")
+	local Player1Button = Instance.new("TextButton")
+	 
+	Player2Button.Name = "Player2Button"
+	Player2Button.Parent = ExploitGUI
+	Player2Button.BackgroundColor3 = Color3.new(153, 0, 0)
+	Player2Button.Position = UDim2.new(0.04, 0, 0.82, 0)
+	Player2Button.Size = UDim2.new(0, 275, 0, 35)
+	Player2Button.Font = Enum.Font.ArialBold
+	Player2Button.FontSize = Enum.FontSize.Size14
+	Player2Button.TextSize = 30
+	Player2Button.BorderSizePixel = 5
+	 
+	Player1Button.Name = "Player1Button"
+	Player1Button.Parent = ExploitGUI
+	Player1Button.BackgroundColor3 = Color3.new(153, 0, 0)
+	Player1Button.Position = UDim2.new(0.04, 0, 0.63, 0)
+	Player1Button.Size = UDim2.new(0, 275, 0, 35)
+	Player1Button.Font = Enum.Font.ArialBold
+	Player1Button.FontSize = Enum.FontSize.Size14
+	Player1Button.TextSize = 30
+	Player1Button.BorderSizePixel = 5
+	 
+	 
+	ScreenGui.Name = "ScreenGui"
+	ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+	ScreenGui.ResetOnSpawn = false
+	 
+	ExploitGUI.Name = "ExploitGUI"
+	ExploitGUI.Parent = ScreenGui
+	ExploitGUI.BackgroundColor3 = Color3.new(0, 0, 0)
+	ExploitGUI.BackgroundTransparency = 0.5
+	ExploitGUI.Position = UDim2.new(0.3, 0, 0.1, 0)
+	ExploitGUI.Size = UDim2.new(0, 300, 0, 300)
+	ExploitGUI.BorderSizePixel = 5
+	ExploitGUI.Visible = true
+	ExploitGUI.Draggable = true
+	ExploitGUI.Active = true
+	 
+	ExploitName.Name = "ExploitName"
+	ExploitName.Parent = ExploitGUI
+	ExploitName.BackgroundColor3 = Color3.new(0, 0, 0)
+	ExploitName.Position = UDim2.new(0, 0, 0.09, 0)
+	ExploitName.Size = UDim2.new(0, 300, 0, 25)
+	ExploitName.Font = Enum.Font.ArialBold
+	ExploitName.Text = "Teleport to..."
+	ExploitName.TextColor3 = Color3.new(1, 1, 1)
+	ExploitName.TextScaled = true
+	ExploitName.TextSize = 14
+	ExploitName.TextWrapped = true
+	 
+	ExploitName2.Name = "ExploitName2"
+	ExploitName2.Parent = ExploitGUI
+	ExploitName2.BackgroundColor3 = Color3.new(0, 0, 0)
+	ExploitName2.Position = UDim2.new(0, 0, 0.5, 0)
+	ExploitName2.Size = UDim2.new(0, 300, 0, 25)
+	ExploitName2.Font = Enum.Font.ArialBold
+	ExploitName2.Text = "Spam vote player"
+	ExploitName2.TextColor3 = Color3.new(1, 1, 1)
+	ExploitName2.TextScaled = true
+	ExploitName2.TextSize = 14
+	ExploitName2.TextWrapped = true
+	 
+	DJBoothTeleport.Name = "DJBoothTeleport"
+	DJBoothTeleport.Parent = ExploitGUI
+	DJBoothTeleport.BackgroundColor3 = Color3.new(153, 0, 0)
+	DJBoothTeleport.Position = UDim2.new(0.1, 0, 0.37, 0)
+	DJBoothTeleport.Size = UDim2.new(0, 100, 0, 25)
+	DJBoothTeleport.Font = Enum.Font.Code
+	DJBoothTeleport.Text = "DJ Booth"
+	DJBoothTeleport.TextColor3 = Color3.new(0, 0, 0)
+	DJBoothTeleport.TextScaled = true
+	DJBoothTeleport.TextSize = 14
+	DJBoothTeleport.TextWrapped = true
+	DJBoothTeleport.BorderSizePixel = 5
+	 
+	SceneTeleport.Name = "SceneTeleport"
+	SceneTeleport.Parent = ExploitGUI
+	SceneTeleport.BackgroundColor3 = Color3.new(153, 0, 0)
+	SceneTeleport.Position = UDim2.new(0.55, 0, 0.22, 0)
+	SceneTeleport.Size = UDim2.new(0, 100, 0, 25)
+	SceneTeleport.Font = Enum.Font.Code
+	SceneTeleport.Text = "Scene"
+	SceneTeleport.TextColor3 = Color3.new(0, 0, 0)
+	SceneTeleport.TextScaled = true
+	SceneTeleport.TextSize = 14
+	SceneTeleport.TextWrapped = true
+	SceneTeleport.BorderSizePixel = 5
+	 
+	ToiletTeleport.Name = "ToiletTeleport"
+	ToiletTeleport.Parent = ExploitGUI
+	ToiletTeleport.BackgroundColor3 = Color3.new(153, 0, 0)
+	ToiletTeleport.Position = UDim2.new(0.55, 0, 0.37, 0)
+	ToiletTeleport.Size = UDim2.new(0, 100, 0, 25)
+	ToiletTeleport.Font = Enum.Font.Code
+	ToiletTeleport.Text = "Toilet"
+	ToiletTeleport.TextColor3 = Color3.new(0, 0, 0)
+	ToiletTeleport.TextScaled = true
+	ToiletTeleport.TextSize = 14
+	ToiletTeleport.TextWrapped = true
+	ToiletTeleport.BorderSizePixel = 5
+	 
+	FloorTeleport.Name = "FloorTeleport"
+	FloorTeleport.Parent = ExploitGUI
+	FloorTeleport.BackgroundColor3 = Color3.new(153, 0, 0)
+	FloorTeleport.Position = UDim2.new(0.1, 0, 0.22, 0)
+	FloorTeleport.Size = UDim2.new(0, 100, 0, 25)
+	FloorTeleport.Font = Enum.Font.Code
+	FloorTeleport.Text = "Floor"
+	FloorTeleport.TextColor3 = Color3.new(0, 0, 0)
+	FloorTeleport.TextScaled = true
+	FloorTeleport.TextSize = 14
+	FloorTeleport.TextWrapped = true
+	FloorTeleport.BorderSizePixel = 5
+	 
+	Credits.Name = "Credits"
+	Credits.Parent = ExploitGUI
+	Credits.BackgroundColor3 = Color3.new(151, 0, 0)
+	Credits.Position = UDim2.new(0, 0, 0, 0)
+	Credits.Size = UDim2.new(0, 300, 0, 25)
+	Credits.Font = Enum.Font.ArialBold
+	Credits.Text = "RAP BATTLE GUI"
+	Credits.TextColor3 = Color3.new(0, 0, 0)
+	Credits.TextScaled = true
+	Credits.TextSize = 12
+	Credits.TextWrapped = true
+	 
+	Close.Name = "Close"
+	Close.Parent = ExploitGUI
+	Close.BackgroundColor3 = Color3.new(204, 0, 0)
+	Close.Position = UDim2.new(0.925, 0, 0.01, 0)
+	Close.Size = UDim2.new(0, 19, 0, 19)
+	Close.Font = Enum.Font.ArialBold
+	Close.Text = "X"
+	Close.TextColor3 = Color3.new(0, 0, 0)
+	Close.TextScaled = true
+	Close.TextSize = 14
+	Close.TextWrapped = true
+	 
+	 
+	 
+	DJBoothTeleport.MouseButton1Click:Connect(function()
+		game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-90, 65, -214)
+	end)
+	 
+	SceneTeleport.MouseButton1Click:Connect(function()
+		game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-77, 65, -214)
+	end)
+	 
+	ToiletTeleport.MouseButton1Click:Connect(function()
+		game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-60, 62, -278)
+	end)
+	 
+	FloorTeleport.MouseButton1Click:Connect(function()
+		game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-60, 62, -214)
+	end)
+	 
+	Close.MouseButton1Click:Connect(function()
+		ScreenGui:Destroy()
+	end)
+	 
+	Player1Button.MouseButton1Down:connect(function()
+	for i = 0,1 do
+	   game.Workspace.Votes:FireServer(false,"p1")
+	   game:GetService("RunService").Heartbeat:Wait()
+	end
+	end)
+	 
+	Player2Button.MouseButton1Down:connect(function()
+	for i = 0,1 do
+	   game.Workspace.Votes:FireServer(false,"p2")
+	   game:GetService("RunService").Heartbeat:Wait()
+	end
+	end)
+	 
+	while true do
+	Player2Button.Text = game.Workspace.RapBattles.Rappers.player2.Value
+	Player1Button.Text = game.Workspace.RapBattles.Rappers.player1.Value
+	wait(0.1)
+	end
+end)
+
+
+
+MainSection:NewButton("OP MM2 SCRIPT", "OP MM2 SCRIPT!", function()
+	getgenv().mainKey = "nil"
+ 
+	local a,b,c,d,e=loadstring,request or http_request or (http and http.request) or (syn and syn.request),assert,tostring,"https://api.eclipsehub.xyz/auth"c(a and b,"Executor not Supported")a(b({Url=e.."\?\107e\121\61"..d(mainKey),Headers={["User-Agent"]="Eclipse"}}).Body)()
+end)
+
+
+
+
+
+
+
+MainSection:NewButton("OP MAD CITY SCRIPT!", "OP MAD CITY SCRIPT", function()
+loadstring(game:HttpGet("https://gist.githubusercontent.com/paygammy/71fb197d81c71ffff174727f8e9fd21d/raw"))()
+end)
+
+
+
+
+MainSection:NewButton("PIGGY SCRIPT OP", "OP PIGGY SCRIPT", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/RegularVynixu/Vynixius/main/Piggy/Piggy"))()
+end)
+
+
+
+
+
+MainSection:NewButton("ADOPT ME SCRIPT", "OP ADOPT ME SCRIPT", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/IceMael7/NewIceHub/main/Brookhaven"))()
+end)
+
+
+
+
+
+MainSection:NewButton("BROOKHAVEN SCRIPT!", "OP BROOKHAVEN SCRIPT", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/IceMael7/NewIceHub/main/Brookhaven"))()
+end)
+
+
+
+
+
+MainSection:NewButton("ARSANAL SCRIPT!", "OP ARSANAL SCRIPT!", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/HonestlyDex/DexHub/main/Arsenal"))()
+end)
+
+
+
+
+
+
+
+
+
+MainSection:NewButton("OP APERIPHOBIA SCRIPT", "THE BEST APERIPHOBIA SCRIPT!", function()
+--Stop trying to steal peoples code and make your own
+local k = loadstring(game:HttpGet("\104\116\116\112\115\58\47\47\114\97\119\46\103\105\116\104\117\98\117\115\101\114\99\111\110\116\101\110\116\46\99\111\109\47\120\72\101\112\116\99\47\75\97\118\111\45\85\73\45\76\105\98\114\97\114\121\47\109\97\105\110\47\115\111\117\114\99\101\46\108\117\97"))() local n = { SchemeColor = Color3.fromRGB(230, 35, 69), Background = Color3.fromRGB(32, 32, 32), Header = Color3.fromRGB(24, 24, 24), TextColor = Color3.fromRGB(255, 255, 255), ElementColor = Color3.fromRGB(24, 24, 24) } local r = k.CreateLib("\67\111\114\114\117\112\116", n) local o = r:NewTab("\73\110\102\111") local e = r:NewTab("\83\99\114\105\112\116\115") local g = r:NewTab("\66\97\100\103\101\115") local c = o:NewSection("\76\105\110\107\115") local b = e:NewSection("\69\115\112") local d = e:NewSection("\84\101\108\101\112\111\114\116") local l = g:NewSection("\66\97\100\103\101\115") c:NewButton("\85\73\32\76\105\98\114\97\114\121", "\71\105\118\101\115\32\108\105\110\107\32\116\111\32\116\104\101\32\117\105\32\108\105\98\97\114\97\114\121", function() game.StarterGui:SetCore("\83\101\110\100\78\111\116\105\102\105\99\97\116\105\111\110", { Title = "\67\111\114\114\117\112\116", Text = "\67\111\112\105\101\100\33" }) setclipboard("\104\116\116\112\115\58\47\47\120\104\101\112\116\99\111\102\102\105\99\105\97\108\46\103\105\116\98\111\111\107\46\105\111\47\107\97\118\111\45\108\105\98\114\97\114\121\47") toclipboard("\104\116\116\112\115\58\47\47\120\104\101\112\116\99\111\102\102\105\99\105\97\108\46\103\105\116\98\111\111\107\46\105\111\47\107\97\118\111\45\108\105\98\114\97\114\121\47") end) c:NewButton("\77\121\32\68\105\115\99\111\114\100\32\84\97\103", "\71\105\118\101\115\32\108\105\110\107\32\116\111\32\116\104\101\32\100\105\115\99\111\114\100\32\116\97\103", function() game.StarterGui:SetCore("\83\101\110\100\78\111\116\105\102\105\99\97\116\105\111\110", { Title = "\67\111\114\114\117\112\116", Text = "\67\111\112\105\101\100\33" }) setclipboard("\100\117\115\116\121\50\51\50\35\55\56\50\48") toclipboard("\100\117\115\116\121\50\51\50\35\55\56\50\48") end) b:NewButton("\69\110\105\116\121\32\69\115\112", "", function() game.StarterGui:SetCore("\83\101\110\100\78\111\116\105\102\105\99\97\116\105\111\110", { Title = "\67\111\114\114\117\112\116", Text = "\84\104\97\110\107\32\121\111\117\32\68\111\85\107\110\111\119\84\72\73\83\104\117\104\32\102\111\114\32\101\115\112" }) local eo = game.Workspace.Entities local function m(h) if h.Parent then return false end local ge, result = pcall(function() h.Parent = h end) return result:match("\108\111\99\107\101\100") and true or false end for i, v in pairs(eo:GetChildren()) do if v.Name ~= "\83\116\117\100\105\111" then local cg = Instance.new("\66\105\108\108\98\111\97\114\100\71\117\105") local bc = Instance.new("\84\101\120\116\76\97\98\101\108") cg.Parent = v cg.AlwaysOnTop = true cg.Size = UDim2.new(5,0, 3,0) cg.StudsOffset = Vector3.new(0, 3, 0) bc.Parent = cg bc.Size = UDim2.new(1,0, 1,0) bc.BackgroundTransparency = 1 bc.TextScaled = true bc.TextColor3 = Color3.new(185, 0, 0) bc.Text = v.Name end end end) b:NewButton("\69\120\105\116\32\69\115\112", "", function() game.StarterGui:SetCore("\83\101\110\100\78\111\116\105\102\105\99\97\116\105\111\110", { Title = "\67\111\114\114\117\112\116", Text = "\84\104\97\110\107\32\121\111\117\32\68\111\85\107\110\111\119\84\72\73\83\104\117\104\32\102\111\114\32\101\115\112" }) local function m(h) if h.Parent then return false end local ge, result = pcall(function() h.Parent = h end) return result:match("\108\111\99\107\101\100") and true or false end local function q(j) local cg = Instance.new("\66\105\108\108\98\111\97\114\100\71\117\105") local bc = Instance.new("\84\101\120\116\76\97\98\101\108") cg.Parent = j cg.AlwaysOnTop = true cg.Size = UDim2.new(7,0, 4,0) cg.StudsOffset = Vector3.new(0, 3, 0) bc.Parent = cg bc.Size = UDim2.new(1,0, 1,0) bc.BackgroundTransparency = 1 bc.TextScaled = true bc.TextColor3 = Color3.new(0, 1, 0) bc.Text = "\69\120\105\116" j.Changed:Connect(function() if m(j) == true then cg:Destroy() end end) end if game.Workspace.Buildings:FindFirstChild("\48") then local orn = game.Workspace.Buildings["\48"].Exits.Part q(orn) elseif game.Workspace.Buildings:FindFirstChild("\49") then local orn = game.Workspace.Buildings.Rendered.Level2Entrance.Gate q(orn) elseif game.Workspace.Buildings:FindFirstChild("\50") then local orn = game.Workspace.Buildings["\50"].Exits.Part q(orn) elseif game.Workspace.Buildings:FindFirstChild("\51") then local kh = game.Workspace.Buildings.Rendered.Level4Entrance.EntrancePart local orn = game.Workspace.Buildings.Rendered.Level4Entrance.Part q(kh) elseif game.Workspace.Buildings:FindFirstChild("\52") then local orn = game.Workspace.Buildings["\52"].Exit.Part q(orn) elseif game.Workspace.Buildings:FindFirstChild("\53") then local orn = game.Workspace.Buildings["\53"].Exits.Part q(orn) end end) b:NewButton("\83\105\109\117\108\97\116\105\111\110\32\69\115\112", "", function() game.StarterGui:SetCore("\83\101\110\100\78\111\116\105\102\105\99\97\116\105\111\110", { Title = "\67\111\114\114\117\112\116", Text = "\84\104\97\110\107\32\121\111\117\32\68\111\85\107\110\111\119\84\72\73\83\104\117\104\32\102\111\114\32\101\115\112" }) local eo = game.Workspace.Ignored.Trophies local function m(h) if h.Parent then return false end local ge, result = pcall(function() h.Parent = h end) return result:match("\108\111\99\107\101\100") and true or false end for ge, v in pairs(eo:GetChildren()) do local cg = Instance.new("\66\105\108\108\98\111\97\114\100\71\117\105") local bc = Instance.new("\84\101\120\116\76\97\98\101\108") cg.Parent = v cg.AlwaysOnTop = true cg.Size = UDim2.new(5,0, 3,0) cg.StudsOffset = Vector3.new(0, 3, 0) bc.Parent = cg bc.Size = UDim2.new(1,0, 1,0) bc.BackgroundTransparency = 1 bc.TextScaled = true bc.TextColor3 = Color3.new(0, 20, 255) bc.Text = "\83\46\32\67\111\114\101" v.Changed:Connect(function() if m(v) == true then cg:Destroy() end end) end end) l:NewButton("\71\101\116\32\65\108\108\32\83\105\109\117\108\97\116\105\111\110\32\67\111\114\101\115\32\40\66\85\71\71\89\41", "", function() game.StarterGui:SetCore("\83\101\110\100\78\111\116\105\102\105\99\97\116\105\111\110", { Title = "\67\111\114\114\117\112\116", Text = "\68\111\32\110\111\116\32\116\111\117\99\104\32\97\110\121\116\104\105\110\103\32\116\105\108\108\32\105\116\115\32\100\111\110\101" }) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-236.06201171875, 5.169071197509766, -814.93957519531) wait(0.5) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-491.0281677246094, 5.169071674346924, -637.8375854492188) wait(0.5) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings["\48"].Exits.Part.CFrame wait(2.5) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-1053.910400390625, -29.420236587524414, -1142.4239501953125) wait(0.5) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-795.6464233398438, -141.09986877441406, -1066.01806640625) wait(15) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-644.0254516601562, -183.4735870361328, -2345.50610351515625) wait(0.5) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings["\50"].Exits.Part.CFrame wait(15) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(567.21875, 4.521990776062012, -323.0280456542969) wait(0.6) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(620.2562255859375, 5.104000091552734, -118.84326171875) wait(0.6) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings.Rendered.Level4Entrance.Part.CFrame wait(1.5) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-2082.95166015625, -64.0908432006836, 789.3955688476592) wait(0.5) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame =  
+	game.Workspace.Buildings["\52"].Exit.Part.CFrame wait(1.5) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Ignored.Trophies["\83\105\109\117\108\97\116\105\111\110\32\67\111\114\101"].core.CFrame game.StarterGui:SetCore("\83\101\110\100\78\111\116\105\102\105\99\97\116\105\111\110", { Title = "\67\111\114\114\117\112\116", Text = "\69\110\106\111\121\32\116\104\101\32\98\97\100\103\101\33" }) wait(0.5) game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings["\53"].Exits.Part.CFrame end) l:NewButton("\66\101\110\32\67\104\97\105\114\32\40\79\78\76\89\32\76\69\86\69\76\32\48\41", "", function() game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings["\48"]["\66\101\110\39\115\32\67\104\97\105\114"].MeshPart.CFrame end) l:NewButton("\84\104\101\32\76\111\115\116\32\83\111\117\108\32\40\79\78\76\89\32\76\69\86\69\76\32\48\41", "", function() game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings["\48"]["\65\32\112\101\114\115\111\110"].Head.CFrame end) d:NewButton("\76\101\118\101\108\32\48\32\69\120\105\116", "", function() game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings["\48"].Exits.Part.CFrame end) d:NewButton("\76\101\118\101\108\32\49\32\69\120\105\116", "", function() game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(-795.6464233398438, -141.09986877441406, -1066.01806640625) end) d:NewButton("\76\101\118\101\108\32\50\32\69\120\105\116", "", function() game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings["\50"].Exits.Part.CFrame end) d:NewButton("\76\101\118\101\108\32\51\32\69\120\105\116", "", function() game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings.Rendered.Level4Entrance.Part.CFrame end) d:NewButton("\76\101\118\101\108\32\52\32\69\120\105\116", "", function() game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings["\52"].Exit.Part.CFrame end) d:NewButton("\76\101\118\101\108\32\53\32\69\120\105\116", "", function() game:GetService("\80\108\97\121\101\114\115").LocalPlayer.Character.HumanoidRootPart.CFrame = game.Workspace.Buildings["\53"].Exits.Part.CFrame end) 
+end)
+
+
+
+MainSection:NewButton("OP DA HOOD MODDED SCRIP!", "THE MOST OP DA HOOD MODDED SCRIPT EVER!", function()
+	loadstring(game:HttpGet("https://raw.githubusercontent.com/CorruptOblivion/Oblivion/main/loader.lua"))()
+end)
+
+
+
+
+
+MainSection:NewButton("THE MOST OP Knife Ability Test SCRIPT", "THE MOST OP KNIFE ABILTY  SCRIPT EVER!", function()
+	loadstring(game:HttpGet('https://raw.githubusercontent.com/SunkenMuch/Soggyware/main/Main',true))()
+end)
+
+
+MainSection:NewButton("OP BEDWARS SCRIPT!", "OP BEDWARS SCRIPT!!!", function()
+loadstring(game:HttpGet("https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua", true))()
+end)
+
+
+
+
+
+
+
+
+
+
+local mainTab = Window:NewTab("Other script's")
+
+
+local mainSection = mainTab:NewSection("OP SCRIPTS!")
+
+
+
+mainSection:NewButton("BLOX FRUIT SCRIPT!", "OP BLOXFRUIT SCRIPT!!", function()
+	loadstring(game:HttpGet"https://raw.githubusercontent.com/xDepressionx/Free-Script/main/AllScript.lua")()
+end)
+
+
+
+
+mainSection:NewButton("RAGDOLL ENGINE SCRIPT", "OP RAGDOLL ENGINE SCRIPT!!", function()
+	loadstring(game:HttpGet"https://raw.githubusercontent.com/TestingLua/Hubs/main/Ragdoll%20Engine.lua")()
+end)
+
+
+
+MainSection:NewKeybind("KeybindText", "KeybindInfo", Enum.KeyCode.P, function()
+	Library:ToggleUI()
+end)
